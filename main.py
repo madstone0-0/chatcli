@@ -1,3 +1,4 @@
+#!/usr/bin/python3.11
 import os
 
 import openai
@@ -15,15 +16,11 @@ def generate_prompt(prompt: str):
 
 def ask(temp: float, tokens: int, model: str):
     if temp < 0 or temp > 1:
-        con.print(
-            "[bold red]Temperature cannot be below 0 or above 1[/bold red]"
-        )
+        con.print("[bold red]Temperature cannot be below 0 or above 1[/bold red]")
         raise typer.Exit(1)
 
     if tokens < 0 or tokens > 2048:
-        con.print(
-            "[bold red]Max tokens cannot be below 0 or above 1500[/bold red]"
-        )
+        con.print("[bold red]Max tokens cannot be below 0 or above 1500[/bold red]")
         raise typer.Exit(1)
 
     prompt = typer.prompt("Enter prompt")
@@ -42,30 +39,22 @@ def ask(temp: float, tokens: int, model: str):
 
 
 @app.command()
-def ask_davinci(
-    temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
-):
+def ask_davinci(temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)):
     ask(temp, tokens, model="text-davinci-003")
 
 
 @app.command()
-def ask_ada(
-    temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
-):
+def ask_ada(temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)):
     ask(temp, tokens, model="text-ada-001")
 
 
 @app.command()
-def ask_curie(
-    temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
-):
+def ask_curie(temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)):
     ask(temp, tokens, model="text-curie-001")
 
 
 @app.command()
-def ask_babbage(
-    temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
-):
+def ask_babbage(temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)):
     ask(temp, tokens, model="text-babbage-001")
 
 
