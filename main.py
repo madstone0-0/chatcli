@@ -20,7 +20,7 @@ def ask(temp: float, tokens: int, model: str):
         raise typer.Exit(1)
 
     if tokens < 0 or tokens > 2048:
-        con.print("[bold red]Max tokens cannot be below 0 or above 1500[/bold red]")
+        con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
         raise typer.Exit(1)
 
     prompt = typer.prompt("Enter prompt")
