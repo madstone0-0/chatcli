@@ -4,10 +4,18 @@ import os
 import openai
 import typer
 from rich.console import Console
+from appdirs import user_data_dir
+
+appname = "ChatCli"
+appauthor = "madstone0-0"
+appdata_location = user_data_dir(appname, appauthor)
+os.makedirs(appdata_location, exist_ok=True)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 app = typer.Typer()
 con = Console()
+
+prompt_loc = f"{appdata_location}/prompts.txt"
 
 
 def generate_prompt(prompt: str):
@@ -33,7 +41,7 @@ def ask(temp: float, tokens: int, model: str):
         )
 
     con.print(f"""{response.choices[0].text}""")
-    with open("prompts.txt", mode="a", encoding="utf-8") as f:
+    with open(prompt_loc, mode="a+", encoding="utf-8") as f:
         response = response.choices[0].text
         f.write(f"Model: {model}\nPrompt: {prompt}\nResponse: {response}\n\n")
 
