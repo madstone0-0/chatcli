@@ -5,6 +5,8 @@ import openai
 import typer
 from rich.console import Console
 from appdirs import user_data_dir
+from transformers import GPT2TokenizerFast
+from icecream import ic
 
 appname = "ChatCli"
 appauthor = "madstone0-0"
@@ -27,19 +29,24 @@ def ask(temp: float, tokens: int, model: str):
         con.print("[bold red]Temperature cannot be below 0 or above 1[/bold red]")
         raise typer.Exit(1)
 
-    if tokens < 0 or tokens > 2048:
+    if tokens <= 0 or tokens > 2048:
         con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
         raise typer.Exit(1)
 
+    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
     prompt = typer.prompt("Enter prompt")
+    prompt_tokens = tokenizer(generate_prompt(prompt))
+    token_num = len(prompt_tokens["input_ids"])
+    # ic(token_num)
+    # ic(tokens - token_num)
     with con.status("Generating"):
         response = openai.Completion.create(
             model=model,
             prompt=generate_prompt(prompt),
             temperature=temp,
-            max_tokens=tokens,
+            max_tokens=int(tokens - token_num),
         )
-
+    ic(len(tokenizer(response.choices[0].text)["input_ids"]))
     con.print(f"""{response.choices[0].text}""")
     with open(prompt_loc, mode="a+", encoding="utf-8") as f:
         response = response.choices[0].text
@@ -47,8 +54,15 @@ def ask(temp: float, tokens: int, model: str):
 
 
 @app.command()
-def ask_davinci(temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)):
+def ask_davinci_text(
+    temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
+):
     ask(temp, tokens, model="text-davinci-003")
+
+
+@app.command()
+def ask_davinci(temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)):
+    ask(temp, tokens, model="davinci")
 
 
 @app.command()
