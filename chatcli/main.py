@@ -6,7 +6,6 @@ import typer
 from rich.console import Console
 from appdirs import user_data_dir
 from transformers import GPT2TokenizerFast
-from icecream import ic
 
 appname = "ChatCli"
 appauthor = "madstone0-0"
@@ -37,8 +36,6 @@ def ask(temp: float, tokens: int, model: str):
     prompt = typer.prompt("Enter prompt")
     prompt_tokens = tokenizer(generate_prompt(prompt))
     token_num = len(prompt_tokens["input_ids"])
-    # ic(token_num)
-    # ic(tokens - token_num)
     with con.status("Generating"):
         response = openai.Completion.create(
             model=model,
@@ -46,7 +43,6 @@ def ask(temp: float, tokens: int, model: str):
             temperature=temp,
             max_tokens=int(tokens - token_num),
         )
-    ic(len(tokenizer(response.choices[0].text)["input_ids"]))
     con.print(f"""{response.choices[0].text}""")
     with open(prompt_loc, mode="a+", encoding="utf-8") as f:
         response = response.choices[0].text
