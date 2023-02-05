@@ -33,9 +33,21 @@ def ask(temp: float, tokens: int, model: str):
         raise typer.Exit(1)
 
     tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-    prompt = typer.prompt("Enter prompt")
+
+    # https://stackoverflow.com/a/38223253/9784169
+    con.print("Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it.")
+    prompt = []
+    while True:
+        try:
+            line = input()
+        except EOFError:
+            break
+        prompt.append(line)
+    # https://stackoverflow.com/a/38223253/9784169
+
     prompt_tokens = tokenizer(generate_prompt(prompt))
     token_num = len(prompt_tokens["input_ids"])
+
     with con.status("Generating"):
         response = openai.Completion.create(
             model=model,
@@ -43,10 +55,12 @@ def ask(temp: float, tokens: int, model: str):
             temperature=temp,
             max_tokens=int(tokens - token_num),
         )
-    con.print(f"""{response.choices[0].text}""")
+
+    output = response.choices[0].text
+    con.print(f"""\nResponse:{output}""")
     with open(prompt_loc, mode="a+", encoding="utf-8") as f:
-        response = response.choices[0].text
-        f.write(f"Model: {model}\nPrompt: {prompt}\nResponse: {response}\n\n")
+        pretty_prompt = "\n".join(prompt)
+        f.write(f"Model: {model}\nPrompt:\n{pretty_prompt}\n\nResponse: {output}\n\n")
 
 
 @app.command()
