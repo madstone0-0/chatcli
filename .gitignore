@@ -1,4 +1,4 @@
 prompts.txt
 venv/*
 dist/*
-chatcli/__pycache__/*
+*.pyc
