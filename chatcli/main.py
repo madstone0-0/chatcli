@@ -49,14 +49,15 @@ def ask(temp: float, tokens: int, model: str):
         except EOFError:
             break
         prompt.append(line)
+    prompt = "\n".join(prompt)
     # https://stackoverflow.com/a/38223253/9784169
 
-    token_num = len(get_tokens(generate_prompt(*prompt)))
+    token_num = len(get_tokens(generate_prompt(prompt)))
 
     with con.status("Generating"):
         response = openai.Completion.create(
             model=model,
-            prompt=generate_prompt(*prompt),
+            prompt=generate_prompt(prompt),
             temperature=temp,
             max_tokens=int(tokens - token_num),
         )
@@ -64,8 +65,7 @@ def ask(temp: float, tokens: int, model: str):
     output = response.choices[0].text
     con.print(f"""\nResponse:{output}""")
     with open(prompt_loc, mode="a+", encoding="utf-8") as f:
-        pretty_prompt = "\n".join(prompt)
-        f.write(f"Model: {model}\nPrompt:\n{pretty_prompt}\n\nResponse: {output}\n\n")
+        f.write(f"Model: {model}\nPrompt:\n{prompt}\n\nResponse: {output}\n\n")
 
 
 @app.command()
