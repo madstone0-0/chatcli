@@ -5,7 +5,10 @@ import openai
 import typer
 from rich.console import Console
 from appdirs import user_data_dir
-from transformers import GPT2TokenizerFast
+from nltk.tokenize import word_tokenize
+
+# from icecream import ic
+
 
 appname = "ChatCli"
 appauthor = "madstone0-0"
@@ -17,6 +20,11 @@ app = typer.Typer()
 con = Console()
 
 prompt_loc = f"{appdata_location}/prompts.txt"
+
+
+def get_tokens(prompt: str):
+    tokens = word_tokenize(prompt)
+    return tokens
 
 
 def generate_prompt(prompt: str):
@@ -32,8 +40,6 @@ def ask(temp: float, tokens: int, model: str):
         con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
         raise typer.Exit(1)
 
-    tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
-
     # https://stackoverflow.com/a/38223253/9784169
     con.print("Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it.")
     prompt = []
@@ -45,13 +51,12 @@ def ask(temp: float, tokens: int, model: str):
         prompt.append(line)
     # https://stackoverflow.com/a/38223253/9784169
 
-    prompt_tokens = tokenizer(generate_prompt(prompt))
-    token_num = len(prompt_tokens["input_ids"])
+    token_num = len(get_tokens(generate_prompt(*prompt)))
 
     with con.status("Generating"):
         response = openai.Completion.create(
             model=model,
-            prompt=generate_prompt(prompt),
+            prompt=generate_prompt(*prompt),
             temperature=temp,
             max_tokens=int(tokens - token_num),
         )
