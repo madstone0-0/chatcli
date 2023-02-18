@@ -60,6 +60,7 @@ def ask(temp: float, tokens: int, model: str):
             prompt=generate_prompt(prompt),
             temperature=temp,
             max_tokens=int(tokens - token_num),
+            stream=True
         )
 
     output = response.choices[0].text
@@ -69,8 +70,15 @@ def ask(temp: float, tokens: int, model: str):
 
 
 @app.command()
+def ask_davinci_code(
+        temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
+):
+    ask(temp, tokens, model="code-davinci-002")
+
+
+@app.command()
 def ask_davinci_text(
-    temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
+        temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
 ):
     ask(temp, tokens, model="text-davinci-003")
 

@@ -2,3 +2,4 @@ prompts.txt
 venv/*
 dist/*
 *.pyc
+.idea/*
