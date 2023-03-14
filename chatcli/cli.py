@@ -6,7 +6,9 @@ import typer
 from rich.console import Console
 from appdirs import user_data_dir
 from nltk.tokenize import word_tokenize
+from typing import Optional
 import json
+from importlib.metadata import version
 
 # from icecream import ic
 
@@ -23,6 +25,25 @@ con = Console()
 prompt_log = []
 # prompt_loc = f"{appdata_location}/prompts.txt"
 prompt_loc = f"{appdata_location}/prompts.json"
+
+
+def startup():
+    con.print(
+        """
+ ██████ ██   ██  █████  ████████  ██████ ██      ██ 
+██      ██   ██ ██   ██    ██    ██      ██      ██ 
+██      ███████ ███████    ██    ██      ██      ██ 
+██      ██   ██ ██   ██    ██    ██      ██      ██ 
+ ██████ ██   ██ ██   ██    ██     ██████ ███████ ██ 
+    """,
+        style="green",
+    )
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        con.print(f"v{version('chatcli')}")
+        raise typer.Exit()
 
 
 def load_log(log: str) -> list:
@@ -55,7 +76,7 @@ def ask(temp: float, tokens: int, model: str):
         raise typer.Exit(1)
 
     con.print(
-        "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit to close prompt"
+        "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit or q to end the session"
     )
 
     # https://stackoverflow.com/a/38223253/9784169
@@ -65,7 +86,7 @@ def ask(temp: float, tokens: int, model: str):
         while True:
             try:
                 line = con.input("[green]>[/green] ")
-                if line == "exit":
+                if line == "exit" or line == "q":
                     con.print("Exiting...")
                     sys.exit(0)
             except EOFError:
@@ -101,13 +122,15 @@ def ask_v2(temp: float, tokens: int, model: str, persona: str):
         con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
         raise typer.Exit(1)
 
+    con.print(f"Current persona settings: {persona}")
     con.print(
-        "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit to close prompt"
+        "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit or q to end the session"
     )
 
-    # https://stackoverflow.com/a/38223253/9784169
     messages = []
     responses = []
+
+    # https://stackoverflow.com/a/38223253/9784169
     while True:
         prompt_log = load_log(prompt_loc)
         prompt = []
@@ -116,7 +139,7 @@ def ask_v2(temp: float, tokens: int, model: str, persona: str):
                 line = con.input("[green]>[/green] ")
                 if line == "exit":
                     con.print("Exiting...")
-                    sys.exit(0)
+                    raise typer.Exit()
             except EOFError:
                 break
             prompt.append(line)
@@ -141,6 +164,20 @@ def ask_v2(temp: float, tokens: int, model: str, persona: str):
         )
         with open(prompt_loc, mode="w", encoding="utf-8") as f:
             json.dump(prompt_log, f, indent=4, ensure_ascii=False)
+
+
+@app.callback()
+def main(
+    version: Optional[bool] = typer.Option(
+        None,
+        "--version",
+        "-v",
+        help="Show the application's version and exit",
+        callback=_version_callback,
+        is_eager=True,
+    )
+) -> None:
+    return
 
 
 @app.command()
