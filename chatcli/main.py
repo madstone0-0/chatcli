@@ -6,6 +6,7 @@ import typer
 from rich.console import Console
 from appdirs import user_data_dir
 from nltk.tokenize import word_tokenize
+import json
 
 # from icecream import ic
 
@@ -19,7 +20,20 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 app = typer.Typer()
 con = Console()
 
-prompt_loc = f"{appdata_location}/prompts.txt"
+prompt_log = []
+# prompt_loc = f"{appdata_location}/prompts.txt"
+prompt_loc = f"{appdata_location}/prompts.json"
+
+
+def load_log(log: str) -> list:
+    prompts = []
+    try:
+        with open(f"{log}", mode="r", encoding="utf-8") as f:
+            if f:
+                prompts = json.loads(" ".join(f.readlines()))
+    except FileNotFoundError:
+        return prompts
+    return prompts
 
 
 def get_tokens(prompt: str):
@@ -46,6 +60,7 @@ def ask(temp: float, tokens: int, model: str):
 
     # https://stackoverflow.com/a/38223253/9784169
     while True:
+        prompt_log = load_log(prompt_loc)
         prompt = []
         while True:
             try:
@@ -59,20 +74,21 @@ def ask(temp: float, tokens: int, model: str):
         prompt = "\n".join(prompt)
         # https://stackoverflow.com/a/38223253/9784169
 
-        token_num = len(get_tokens(generate_prompt(prompt)))
+        # token_num = len(get_tokens(generate_prompt(prompt)))
 
         with con.status("Generating"):
             response = openai.Completion.create(
                 model=model,
                 prompt=generate_prompt(prompt),
                 temperature=temp,
-                max_tokens=int(tokens - token_num),
+                max_tokens=tokens,
             )
 
         output = response.choices[0].text
         con.print(f"""\nResponse:{output}\n""")
-        with open(prompt_loc, mode="a+", encoding="utf-8") as f:
-            f.write(f"Model: {model}\nPrompt:\n{prompt}\n\nResponse: {output}\n\n")
+        prompt_log.append({"model": model, "prompt": prompt, "response": output})
+        with open(prompt_loc, mode="w", encoding="utf-8") as f:
+            json.dump(prompt_log, f, indent=4, ensure_ascii=False)
 
 
 @app.command()
