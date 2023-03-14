@@ -114,7 +114,7 @@ def ask(temp: float, tokens: int, model: str):
             json.dump(prompt_log, f, indent=4, ensure_ascii=False)
 
 
-def ask_v2(temp: float, tokens: int, model: str, persona: str):
+def ask_v2(temp: float, tokens: int, model: str, persona: str, is_file: bool | None):
 
     if temp < 0 or temp > 1:
         con.print("[bold red]Temperature cannot be below 0 or above 1[/bold red]")
@@ -123,6 +123,10 @@ def ask_v2(temp: float, tokens: int, model: str, persona: str):
     if tokens <= 0 or tokens > 2048:
         con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
         raise typer.Exit(1)
+
+    if is_file:
+        with open(persona, "r", encoding="utf-8") as f:
+            persona = "".join(f.readlines())
 
     con.print(f"Current persona settings: {persona}")
     con.print(
@@ -187,8 +191,11 @@ def ask_turbo(
     temp: float = typer.Argument(0.7),
     tokens: int = typer.Argument(1000),
     persona: str = typer.Argument("You are a helpful assistant"),
+    is_file: Optional[bool] = typer.Option(
+        None, "--file", help="Read persona from file path"
+    ),
 ):
-    ask_v2(temp, tokens, model="gpt-3.5-turbo", persona=persona)
+    ask_v2(temp, tokens, model="gpt-3.5-turbo", persona=persona, is_file=is_file)
 
 
 @app.command()
