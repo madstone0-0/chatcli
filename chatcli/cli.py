@@ -35,6 +35,8 @@ def startup():
 ██      ███████ ███████    ██    ██      ██      ██ 
 ██      ██   ██ ██   ██    ██    ██      ██      ██ 
  ██████ ██   ██ ██   ██    ██     ██████ ███████ ██ 
+
+        written by [link=https://github.com/madstone0-0]madstone0-0[/link]
     """,
         style="green",
     )
