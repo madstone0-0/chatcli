@@ -85,10 +85,71 @@ def ask(temp: float, tokens: int, model: str):
             )
 
         output = response.choices[0].text
-        con.print(f"""\nResponse:{output}\n""")
+        con.print(f"""\n{output}\n""")
         prompt_log.append({"model": model, "prompt": prompt, "response": output})
         with open(prompt_loc, mode="w", encoding="utf-8") as f:
             json.dump(prompt_log, f, indent=4, ensure_ascii=False)
+
+
+def ask_v2(temp: float, tokens: int, model: str, persona: str):
+
+    if temp < 0 or temp > 1:
+        con.print("[bold red]Temperature cannot be below 0 or above 1[/bold red]")
+        raise typer.Exit(1)
+
+    if tokens <= 0 or tokens > 2048:
+        con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
+        raise typer.Exit(1)
+
+    con.print(
+        "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit to close prompt"
+    )
+
+    # https://stackoverflow.com/a/38223253/9784169
+    messages = []
+    responses = []
+    while True:
+        prompt_log = load_log(prompt_loc)
+        prompt = []
+        while True:
+            try:
+                line = con.input("[green]>[/green] ")
+                if line == "exit":
+                    con.print("Exiting...")
+                    sys.exit(0)
+            except EOFError:
+                break
+            prompt.append(line)
+        prompt = "\n".join(prompt)
+        # https://stackoverflow.com/a/38223253/9784169
+        messages.append({"role": "user", "content": prompt})
+
+        with con.status("Generating"):
+            response = openai.ChatCompletion.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": persona},
+                    *messages,
+                    *responses,
+                ],
+            )
+        output = response["choices"][0]["message"]["content"]
+        responses.append({"role": "assistant", "content": output})
+        con.print(f"""\n{output}\n""")
+        prompt_log.append(
+            {"model": model, "persona": persona, "prompt": prompt, "response": output}
+        )
+        with open(prompt_loc, mode="w", encoding="utf-8") as f:
+            json.dump(prompt_log, f, indent=4, ensure_ascii=False)
+
+
+@app.command()
+def ask_turbo(
+    temp: float = typer.Argument(0.7),
+    tokens: int = typer.Argument(1000),
+    persona: str = typer.Argument("You are a helpful assistant"),
+):
+    ask_v2(temp, tokens, model="gpt-3.5-turbo", persona=persona)
 
 
 @app.command()
