@@ -1,6 +1,6 @@
 #!/usr/bin/python3.11
 import os
-
+import sys
 import openai
 import typer
 from rich.console import Console
@@ -40,45 +40,51 @@ def ask(temp: float, tokens: int, model: str):
         con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
         raise typer.Exit(1)
 
+    con.print(
+        "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit to close prompt"
+    )
+
     # https://stackoverflow.com/a/38223253/9784169
-    con.print("Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it.")
-    prompt = []
     while True:
-        try:
-            line = input()
-        except EOFError:
-            break
-        prompt.append(line)
-    prompt = "\n".join(prompt)
-    # https://stackoverflow.com/a/38223253/9784169
+        prompt = []
+        while True:
+            try:
+                line = con.input("[green]>[/green] ")
+                if line == "exit":
+                    con.print("Exiting...")
+                    sys.exit(0)
+            except EOFError:
+                break
+            prompt.append(line)
+        prompt = "\n".join(prompt)
+        # https://stackoverflow.com/a/38223253/9784169
 
-    token_num = len(get_tokens(generate_prompt(prompt)))
+        token_num = len(get_tokens(generate_prompt(prompt)))
 
-    with con.status("Generating"):
-        response = openai.Completion.create(
-            model=model,
-            prompt=generate_prompt(prompt),
-            temperature=temp,
-            max_tokens=int(tokens - token_num),
-            stream=True
-        )
+        with con.status("Generating"):
+            response = openai.Completion.create(
+                model=model,
+                prompt=generate_prompt(prompt),
+                temperature=temp,
+                max_tokens=int(tokens - token_num),
+            )
 
-    output = response.choices[0].text
-    con.print(f"""\nResponse:{output}""")
-    with open(prompt_loc, mode="a+", encoding="utf-8") as f:
-        f.write(f"Model: {model}\nPrompt:\n{prompt}\n\nResponse: {output}\n\n")
+        output = response.choices[0].text
+        con.print(f"""\nResponse:{output}\n""")
+        with open(prompt_loc, mode="a+", encoding="utf-8") as f:
+            f.write(f"Model: {model}\nPrompt:\n{prompt}\n\nResponse: {output}\n\n")
 
 
 @app.command()
 def ask_davinci_code(
-        temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
+    temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
 ):
     ask(temp, tokens, model="code-davinci-002")
 
 
 @app.command()
 def ask_davinci_text(
-        temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
+    temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
 ):
     ask(temp, tokens, model="text-davinci-003")
 
