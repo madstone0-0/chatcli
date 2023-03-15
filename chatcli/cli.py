@@ -2,6 +2,7 @@
 import os
 import sys
 import openai
+from openai.error import APIConnectionError, RateLimitError
 import typer
 from rich.console import Console
 from appdirs import user_data_dir
@@ -42,6 +43,12 @@ def startup():
     )
 
 
+help_msgs = {
+    "temp": "Controls the randomness of responses, 2 makes output more random, 0 makes it more focused and deterministic",
+    "tokens": "Max tokens used",
+}
+
+
 def _version_callback(value: bool) -> None:
     if value:
         con.print(f"v{version('chatcli')}")
@@ -69,7 +76,7 @@ def generate_prompt(prompt: str):
 
 
 def ask(temp: float, tokens: int, model: str):
-    if temp < 0 or temp > 1:
+    if temp < 0 or temp > 2:
         con.print("[bold red]Temperature cannot be below 0 or above 1[/bold red]")
         raise typer.Exit(1)
 
@@ -77,8 +84,9 @@ def ask(temp: float, tokens: int, model: str):
         con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
         raise typer.Exit(1)
 
+    con.print(f"Temperature settings: {temp}\nMax Tokens: {tokens}\nModel: {model}")
     con.print(
-        "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit or q to end the session"
+        "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit to end the session"
     )
 
     # https://stackoverflow.com/a/38223253/9784169
@@ -90,7 +98,7 @@ def ask(temp: float, tokens: int, model: str):
                 line = con.input("[green]>[/green] ")
                 if line == "exit" or line == "q":
                     con.print("Exiting...")
-                    sys.exit(0)
+                    raise typer.Exit()
             except EOFError:
                 break
             prompt.append(line)
@@ -114,9 +122,9 @@ def ask(temp: float, tokens: int, model: str):
             json.dump(prompt_log, f, indent=4, ensure_ascii=False)
 
 
-def ask_v2(temp: float, tokens: int, model: str, persona: str):
+def ask_v2(temp: float, tokens: int, model: str, persona: str, is_file: bool | None):
 
-    if temp < 0 or temp > 1:
+    if temp < 0 or temp > 2:
         con.print("[bold red]Temperature cannot be below 0 or above 1[/bold red]")
         raise typer.Exit(1)
 
@@ -124,6 +132,11 @@ def ask_v2(temp: float, tokens: int, model: str, persona: str):
         con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
         raise typer.Exit(1)
 
+    if is_file:
+        with open(persona, "r", encoding="utf-8") as f:
+            persona = "".join(f.readlines())
+
+    con.print(f"Temperature settings: {temp}\nMax Tokens: {tokens}\nModel: {model}")
     con.print(f"Current persona settings: {persona}")
     con.print(
         "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit or q to end the session"
@@ -139,7 +152,7 @@ def ask_v2(temp: float, tokens: int, model: str, persona: str):
         while True:
             try:
                 line = con.input("[green]>[/green] ")
-                if line == "exit":
+                if line == "exit" or line == "q":
                     con.print("Exiting...")
                     raise typer.Exit()
             except EOFError:
@@ -150,14 +163,28 @@ def ask_v2(temp: float, tokens: int, model: str, persona: str):
         messages.append({"role": "user", "content": prompt})
 
         with con.status("Generating"):
-            response = openai.ChatCompletion.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": persona},
-                    *messages,
-                    *responses,
-                ],
-            )
+            try:
+                response = openai.ChatCompletion.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": persona},
+                        *messages,
+                        *responses,
+                    ],
+                )
+            except RateLimitError:
+                con.print(
+                    "Current model currently overloaded with requests, please try again later",
+                    style="red bold",
+                )
+                raise typer.Exit(1)
+            except APIConnectionError:
+                con.print(
+                    "Could not connect to API, please check your connection and try again",
+                    style="red bold",
+                )
+                raise typer.Exit()
+
         output = response["choices"][0]["message"]["content"]
         responses.append({"role": "assistant", "content": output})
         con.print(f"""\n{output}\n""")
@@ -184,44 +211,81 @@ def main(
 
 @app.command()
 def ask_turbo(
-    temp: float = typer.Argument(0.7),
-    tokens: int = typer.Argument(1000),
-    persona: str = typer.Argument("You are a helpful assistant"),
+    temp: float = typer.Argument(0.7, help=help_msgs["temp"]),
+    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
+    persona: str = typer.Argument(
+        "You are a helpful assistant", help="Assistant persona"
+    ),
+    is_file: Optional[bool] = typer.Option(
+        None, "--file", help="Read persona from file path"
+    ),
 ):
-    ask_v2(temp, tokens, model="gpt-3.5-turbo", persona=persona)
+    ask_v2(temp, tokens, model="gpt-3.5-turbo", persona=persona, is_file=is_file)
 
 
 @app.command()
 def ask_davinci_code(
-    temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
+    temp: float = typer.Argument(
+        0.7,
+        help=help_msgs["temp"],
+    ),
+    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
 ):
     ask(temp, tokens, model="code-davinci-002")
 
 
 @app.command()
 def ask_davinci_text(
-    temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)
+    temp: float = typer.Argument(
+        0.7,
+        help=help_msgs["temp"],
+    ),
+    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
 ):
     ask(temp, tokens, model="text-davinci-003")
 
 
 @app.command()
-def ask_davinci(temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)):
+def ask_davinci(
+    temp: float = typer.Argument(
+        0.7,
+        help=help_msgs["temp"],
+    ),
+    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
+):
     ask(temp, tokens, model="davinci")
 
 
 @app.command()
-def ask_ada(temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)):
+def ask_ada(
+    temp: float = typer.Argument(
+        0.7,
+        help=help_msgs["temp"],
+    ),
+    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
+):
     ask(temp, tokens, model="text-ada-001")
 
 
 @app.command()
-def ask_curie(temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)):
+def ask_curie(
+    temp: float = typer.Argument(
+        0.7,
+        help=help_msgs["temp"],
+    ),
+    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
+):
     ask(temp, tokens, model="text-curie-001")
 
 
 @app.command()
-def ask_babbage(temp: float = typer.Argument(0.7), tokens: int = typer.Argument(1000)):
+def ask_babbage(
+    temp: float = typer.Argument(
+        0.7,
+        help=help_msgs["temp"],
+    ),
+    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
+):
     ask(temp, tokens, model="text-babbage-001")
 
 
