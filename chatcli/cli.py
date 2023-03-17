@@ -9,7 +9,6 @@ from chatcli.ask import ask, ask_v2
 
 # from icecream import ic
 
-
 app = typer.Typer()
 
 
