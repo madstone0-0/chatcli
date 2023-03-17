@@ -1,15 +1,15 @@
 #!/usr/bin/python3.11
+import json
 import os
-import sys
+from importlib.metadata import version
+from typing import Optional
+
 import openai
-from openai.error import APIConnectionError, RateLimitError
 import typer
-from rich.console import Console
 from appdirs import user_data_dir
 from nltk.tokenize import word_tokenize
-from typing import Optional
-import json
-from importlib.metadata import version
+from openai.error import APIConnectionError, RateLimitError
+from rich.console import Console
 
 # from icecream import ic
 
@@ -26,6 +26,9 @@ con = Console()
 prompt_log = []
 # prompt_loc = f"{appdata_location}/prompts.txt"
 prompt_loc = f"{appdata_location}/prompts.json"
+
+MAX_TOKENS = 2048
+MAX_TEMP = 2
 
 
 def startup():
@@ -44,7 +47,8 @@ def startup():
 
 
 help_msgs = {
-    "temp": "Controls the randomness of responses, 2 makes output more random, 0 makes it more focused and deterministic",
+    "temp": "Controls the randomness of responses,"
+    "2 makes output more random, 0 makes it more focused and deterministic",
     "tokens": "Max tokens used",
 }
 
@@ -76,11 +80,11 @@ def generate_prompt(prompt: str):
 
 
 def ask(temp: float, tokens: int, model: str):
-    if temp < 0 or temp > 2:
+    if temp < 0 or temp > MAX_TEMP:
         con.print("[bold red]Temperature cannot be below 0 or above 1[/bold red]")
         raise typer.Exit(1)
 
-    if tokens <= 0 or tokens > 2048:
+    if tokens <= 0 or tokens > MAX_TOKENS:
         con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
         raise typer.Exit(1)
 
@@ -106,29 +110,36 @@ def ask(temp: float, tokens: int, model: str):
         # https://stackoverflow.com/a/38223253/9784169
 
         # token_num = len(get_tokens(generate_prompt(prompt)))
+        try:
+            with con.status("Generating"):
+                response = openai.Completion.create(
+                    model=model,
+                    prompt=generate_prompt(prompt),
+                    temperature=temp,
+                    max_tokens=tokens,
+                )
 
-        with con.status("Generating"):
-            response = openai.Completion.create(
-                model=model,
-                prompt=generate_prompt(prompt),
-                temperature=temp,
-                max_tokens=tokens,
+            output = response.choices[0].text
+            con.print(f"""\n{output}\n""")
+            prompt_log.append({"model": model, "prompt": prompt, "response": output})
+            with open(prompt_loc, mode="w", encoding="utf-8") as f:
+                json.dump(prompt_log, f, indent=4, ensure_ascii=False)
+
+        except APIConnectionError:
+            con.print(
+                "Could not connect to API, please check your connection and try again",
+                style="red bold",
             )
-
-        output = response.choices[0].text
-        con.print(f"""\n{output}\n""")
-        prompt_log.append({"model": model, "prompt": prompt, "response": output})
-        with open(prompt_loc, mode="w", encoding="utf-8") as f:
-            json.dump(prompt_log, f, indent=4, ensure_ascii=False)
+            continue
 
 
 def ask_v2(temp: float, tokens: int, model: str, persona: str, is_file: bool | None):
 
-    if temp < 0 or temp > 2:
+    if temp < 0 or temp > MAX_TEMP:
         con.print("[bold red]Temperature cannot be below 0 or above 1[/bold red]")
         raise typer.Exit(1)
 
-    if tokens <= 0 or tokens > 2048:
+    if tokens <= 0 or tokens > MAX_TOKENS:
         con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
         raise typer.Exit(1)
 
@@ -160,10 +171,10 @@ def ask_v2(temp: float, tokens: int, model: str, persona: str, is_file: bool | N
             prompt.append(line)
         prompt = "\n".join(prompt)
         # https://stackoverflow.com/a/38223253/9784169
-        messages.append({"role": "user", "content": prompt})
 
-        with con.status("Generating"):
-            try:
+        messages.append({"role": "user", "content": prompt})
+        try:
+            with con.status("Generating"):
                 response = openai.ChatCompletion.create(
                     model=model,
                     messages=[
@@ -172,27 +183,36 @@ def ask_v2(temp: float, tokens: int, model: str, persona: str, is_file: bool | N
                         *responses,
                     ],
                 )
-            except RateLimitError:
-                con.print(
-                    "Current model currently overloaded with requests, please try again later",
-                    style="red bold",
-                )
-                raise typer.Exit(1)
-            except APIConnectionError:
-                con.print(
-                    "Could not connect to API, please check your connection and try again",
-                    style="red bold",
-                )
-                raise typer.Exit()
 
-        output = response["choices"][0]["message"]["content"]
-        responses.append({"role": "assistant", "content": output})
-        con.print(f"""\n{output}\n""")
-        prompt_log.append(
-            {"model": model, "persona": persona, "prompt": prompt, "response": output}
-        )
-        with open(prompt_loc, mode="w", encoding="utf-8") as f:
-            json.dump(prompt_log, f, indent=4, ensure_ascii=False)
+            output = response["choices"][0]["message"]["content"]
+            responses.append({"role": "assistant", "content": output})
+            con.print(f"""\n{output}\n""")
+            prompt_log.append(
+                {
+                    "model": model,
+                    "persona": persona,
+                    "prompt": prompt,
+                    "response": output,
+                }
+            )
+            with open(prompt_loc, mode="w", encoding="utf-8") as f:
+                json.dump(prompt_log, f, indent=4, ensure_ascii=False)
+
+        except RateLimitError:
+            con.print(
+                "Current model currently overloaded with requests, please try again later",
+                style="red bold",
+            )
+            # raise typer.Exit(1)
+            continue
+
+        except APIConnectionError:
+            con.print(
+                "Could not connect to API, please check your connection and try again",
+                style="red bold",
+            )
+            continue
+            # raise typer.Exit()
 
 
 @app.callback()
