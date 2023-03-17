@@ -1,9 +1,9 @@
-from chatcli.cli import app, startup
+from chatcli import appname
+from chatcli.cli import app
 
 
 def main():
-    startup()
-    app(prog_name="chatcli")
+    app(prog_name=appname.lower())
 
 
 if __name__ == "__main__":
