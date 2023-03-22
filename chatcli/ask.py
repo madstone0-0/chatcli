@@ -3,11 +3,13 @@ import os
 
 import openai
 import typer
+# from icecream import ic
 from openai.error import APIConnectionError, RateLimitError
+from prompt_toolkit import PromptSession
 
 from chatcli import appdata_location, con
+from chatcli.history import PromptHistory
 from chatcli.utils import generate_prompt, load_log, read_prompt
-from icecream import ic
 
 MAX_TOKENS = 2048
 MAX_TEMP = 2
@@ -35,6 +37,9 @@ def startup():
 class Ask:
     def __init__(self):
         self.prompt_log = load_log(prompt_loc)
+        self.session = PromptSession(
+            history=PromptHistory(f"{appdata_location}/prompt_history")
+        )
 
     def ask_v1(self, temp: float, tokens: int, model: str):
         if temp < 0 or temp > MAX_TEMP:
@@ -49,13 +54,12 @@ class Ask:
 
         con.print(f"Temperature settings: {temp}\nMax Tokens: {tokens}\nModel: {model}")
         con.print(
-            "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit to end the session"
+            "Enter/Paste your prompt. Esc-Enter save it and exit or q to end the session"
         )
 
         while True:
             self.prompt_log = load_log(prompt_loc)
-            self.history = [f"""{prompt['prompt']}""" for prompt in self.prompt_log]
-            prompt = read_prompt()
+            prompt = read_prompt(self.session)
 
             # token_num = len(get_tokens(generate_prompt(prompt)))
             try:
@@ -81,7 +85,6 @@ class Ask:
                     style="red bold",
                 )
                 continue
-            ic([f"""{prompt["prompt"]}""" for prompt in self.prompt_log])
 
     def ask_v2(
         self, temp: float, tokens: int, model: str, persona: str, is_file: bool | None
@@ -103,7 +106,7 @@ class Ask:
         con.print(f"Temperature settings: {temp}\nMax Tokens: {tokens}\nModel: {model}")
         con.print(f"Current persona settings: {persona}")
         con.print(
-            "Enter/Paste your prompt. Ctrl-D or Ctrl-Z on windows to save it. And exit or q to end the session"
+            "Enter/Paste your prompt. Esc-Enter save it and exit or q to end the session"
         )
 
         messages = []
@@ -112,8 +115,7 @@ class Ask:
         # https://stackoverflow.com/a/38223253/9784169
         while True:
             self.prompt_log = load_log(prompt_loc)
-            self.history = [f"""{prompt['prompt']}""" for prompt in self.prompt_log]
-            prompt = read_prompt()
+            prompt = read_prompt(self.session)
 
             messages.append({"role": "user", "content": prompt})
             try:
@@ -155,4 +157,3 @@ class Ask:
                     style="red bold",
                 )
                 continue
-            ic([f"""{prompt["prompt"]}""" for prompt in self.prompt_log])

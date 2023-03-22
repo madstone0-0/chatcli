@@ -1,4 +1,3 @@
-#!/usr/bin/python3.11
 from importlib.metadata import version
 from typing import Optional
 

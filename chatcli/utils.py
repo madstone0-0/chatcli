@@ -1,8 +1,15 @@
 import json
 
 from nltk.tokenize import word_tokenize
-from chatcli import con
+from prompt_toolkit import PromptSession
+from prompt_toolkit.key_binding import KeyBindings
 from typer import Exit
+
+from chatcli import con
+
+# from icecream import ic
+
+bindings = KeyBindings()
 
 
 def load_log(log: str) -> list:
@@ -16,20 +23,15 @@ def load_log(log: str) -> list:
     return prompts
 
 
-def read_prompt():
-    prompt = []
-    # https://stackoverflow.com/a/38223253/9784169
-    while True:
-        try:
-            line = con.input("[green]>[/green] ")
-            if line == "exit" or line == "q":
-                con.print("Exiting...")
-                raise Exit()
-        except EOFError:
-            break
-        prompt.append(line)
-    prompt = "\n".join(prompt)
-    # https://stackoverflow.com/a/38223253/9784169
+def read_prompt(session: PromptSession):
+    prompt = session.prompt(
+        "> ", key_bindings=bindings, multiline=True, prompt_continuation="> "
+    )
+    if prompt == "exit" or prompt == "q":
+        con.print("Exiting...")
+        raise Exit(0)
+    if type(prompt) is list:
+        prompt = "\n".join(prompt)
     return prompt
 
 
