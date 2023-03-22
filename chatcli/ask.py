@@ -16,7 +16,7 @@ MAX_TEMP = 2
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-prompt_loc = f"{appdata_location}/prompts_test.json"
+prompt_loc = f"{appdata_location}/prompts.json"
 
 
 def startup():
