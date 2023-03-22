@@ -5,12 +5,10 @@ from typing import Optional
 import typer
 
 from chatcli import con
-from chatcli.ask import ask, ask_v2
-
-# from icecream import ic
+from chatcli.ask import Ask
 
 app = typer.Typer()
-
+ask = Ask()
 
 help_msgs = {
     "temp": "Controls the randomness of responses,"
@@ -50,7 +48,7 @@ def ask_turbo(
         None, "--file", help="Read persona from file path"
     ),
 ):
-    ask_v2(temp, tokens, model="gpt-3.5-turbo", persona=persona, is_file=is_file)
+    ask.ask_v2(temp, tokens, model="gpt-3.5-turbo", persona=persona, is_file=is_file)
 
 
 @app.command()
@@ -61,7 +59,7 @@ def ask_davinci_code(
     ),
     tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
 ):
-    ask(temp, tokens, model="code-davinci-002")
+    ask.ask_v1(temp, tokens, model="code-davinci-002")
 
 
 @app.command()
@@ -72,7 +70,7 @@ def ask_davinci_text(
     ),
     tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
 ):
-    ask(temp, tokens, model="text-davinci-003")
+    ask.ask_v1(temp, tokens, model="text-davinci-003")
 
 
 @app.command()
@@ -83,7 +81,7 @@ def ask_davinci(
     ),
     tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
 ):
-    ask(temp, tokens, model="davinci")
+    ask.ask_v1(temp, tokens, model="davinci")
 
 
 @app.command()
@@ -94,7 +92,7 @@ def ask_ada(
     ),
     tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
 ):
-    ask(temp, tokens, model="text-ada-001")
+    ask.ask_v1(temp, tokens, model="text-ada-001")
 
 
 @app.command()
@@ -105,7 +103,7 @@ def ask_curie(
     ),
     tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
 ):
-    ask(temp, tokens, model="text-curie-001")
+    ask.ask_v1(temp, tokens, model="text-curie-001")
 
 
 @app.command()
@@ -116,4 +114,4 @@ def ask_babbage(
     ),
     tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
 ):
-    ask(temp, tokens, model="text-babbage-001")
+    ask.ask_v1(temp, tokens, model="text-babbage-001")
