@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "chatcli"
-version = "0.2.5"
+version = "0.2.6"
 description = "CLI implementation of Chat-GPT"
 authors = ["Madiba Hudson-Quansah <mhquansah@gmail.com>"]
 readme = "README.md"
