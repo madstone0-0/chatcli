@@ -3,6 +3,7 @@ import os
 from appdirs import user_data_dir
 from rich.console import Console
 
+ERROR = "bold red"
 appname = "ChatCli"
 appauthor = "madstone0-0"
 appdata_location = user_data_dir(appname, appauthor)

@@ -1,22 +1,24 @@
 import json
 import os
+from typing import Optional
 
 import openai
 import typer
-# from icecream import ic
 from openai.error import APIConnectionError, RateLimitError
 from prompt_toolkit import PromptSession
 
-from chatcli import appdata_location, con
+from chatcli import ERROR, appdata_location, con
 from chatcli.history import PromptHistory
-from chatcli.utils import generate_prompt, load_log, read_prompt
+from chatcli.utils import generate_prompt, get_tokens, load_log, read_prompt
 
 MAX_TOKENS = 2048
+MAX_TOKENS_V2 = 4096
 MAX_TEMP = 2
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 prompt_loc = f"{appdata_location}/prompts.json"
+# prompt_loc = f"{appdata_location}/prompts_test.json"
 
 
 def startup():
@@ -43,11 +45,13 @@ class Ask:
 
     def ask_v1(self, temp: float, tokens: int, model: str):
         if temp < 0 or temp > MAX_TEMP:
-            con.print("[bold red]Temperature cannot be below 0 or above 1[/bold red]")
+            con.print(f"Temperature cannot be below 0 or above {MAX_TEMP}", style=ERROR)
             raise typer.Exit(1)
 
         if tokens <= 0 or tokens > MAX_TOKENS:
-            con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
+            con.print(
+                f"Max tokens cannot be below 0 or above {MAX_TOKENS}", style=ERROR
+            )
             raise typer.Exit(1)
 
         startup()
@@ -87,14 +91,21 @@ class Ask:
                 continue
 
     def ask_v2(
-        self, temp: float, tokens: int, model: str, persona: str, is_file: bool | None
+        self,
+        temp: float,
+        tokens: int,
+        model: str,
+        persona: str,
+        is_file: Optional[bool],
     ):
         if temp < 0 or temp > MAX_TEMP:
-            con.print("[bold red]Temperature cannot be below 0 or above 1[/bold red]")
+            con.print(f"Temperature cannot be below 0 or above {MAX_TEMP}", style=ERROR)
             raise typer.Exit(1)
 
-        if tokens <= 0 or tokens > MAX_TOKENS:
-            con.print("[bold red]Max tokens cannot be below 0 or above 2048[/bold red]")
+        if tokens <= 0 or tokens > MAX_TOKENS_V2:
+            con.print(
+                f"Max tokens cannot be below 0 or above {MAX_TOKENS_V2}", style=ERROR
+            )
             raise typer.Exit(1)
 
         if is_file:
@@ -111,14 +122,31 @@ class Ask:
 
         messages = []
         responses = []
+        total_tokens = 0
 
-        # https://stackoverflow.com/a/38223253/9784169
         while True:
             self.prompt_log = load_log(prompt_loc)
             prompt = read_prompt(self.session)
+            prompt_len = len(get_tokens(prompt))
+
+            if prompt_len + total_tokens > MAX_TOKENS_V2:
+                con.print(
+                    "You have reached the maximum total prompt length this model supports, Please reduce the length of"
+                    "the messages\nExiting...",
+                    style=ERROR,
+                )
+                raise typer.Exit(1)
 
             messages.append({"role": "user", "content": prompt})
             try:
+                # if message_responses == []:
+                #     ic("Using *messaages, *responses")
+                #     sent = [*messages, *responses]
+                # else:
+                #     ic("Using message_responses")
+                #     sent = message_responses
+
+                # ic(sent[:3])
                 with con.status("Generating"):
                     response = openai.ChatCompletion.create(
                         model=model,
@@ -126,10 +154,15 @@ class Ask:
                             {"role": "system", "content": persona},
                             *messages,
                             *responses,
+                            # *sent,
                         ],
                     )
 
+                # ic(message_responses[:3])
+
                 output = response["choices"][0]["message"]["content"]
+                total_tokens = response["usage"]["total_tokens"]
+
                 responses.append({"role": "assistant", "content": output})
                 con.print(f"""\n{output}\n""")
                 self.prompt_log.append(
@@ -140,6 +173,12 @@ class Ask:
                         "response": output,
                     }
                 )
+
+                # message_responses = [
+                #     item for combo in zip(messages, responses) for item in combo
+                # ]
+                # ic(not message_responses == [])
+
                 with open(prompt_loc, mode="w", encoding="utf-8") as f:
                     json.dump(self.prompt_log, f, indent=4, ensure_ascii=False)
 
