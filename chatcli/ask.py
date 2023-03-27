@@ -6,6 +6,8 @@ import openai
 import typer
 from openai.error import APIConnectionError, RateLimitError
 from prompt_toolkit import PromptSession
+from rich.markdown import Markdown
+from rich.padding import Padding
 
 from chatcli import ERROR, appdata_location, con
 from chatcli.history import PromptHistory
@@ -75,8 +77,9 @@ class Ask:
                         max_tokens=tokens,
                     )
 
-                output = response.choices[0].text
-                con.print(f"""\n{output}\n""")
+                output = f"""{response.choices[0].text}"""
+                # con.print(f"""\n{output}\n""")
+                con.print(Markdown(output))
                 self.prompt_log.append(
                     {"model": model, "prompt": prompt, "response": output}
                 )
@@ -129,9 +132,9 @@ class Ask:
             prompt = read_prompt(self.session)
             prompt_len = len(get_tokens(prompt))
 
-            if prompt_len + total_tokens > MAX_TOKENS_V2:
-                con.print(
-                    "You have reached the maximum total prompt length this model supports, Please reduce the length of"
+            if prompt_len + total_tokens > tokens:
+                print(
+                    "You have reached the maximum token length, Please reduce the length of"
                     "the messages\nExiting...",
                     style=ERROR,
                 )
@@ -164,7 +167,11 @@ class Ask:
                 total_tokens = response["usage"]["total_tokens"]
 
                 responses.append({"role": "assistant", "content": output})
-                con.print(f"""\n{output}\n""")
+                # con.print(f"""\n{output}\n""")
+                con_out = Padding(
+                    Markdown(f"""{output}""", code_theme="ansi_dark"), (1, 0)
+                )
+                con.print(con_out)
                 self.prompt_log.append(
                     {
                         "model": model,

@@ -3,14 +3,11 @@ import json
 # from icecream import ic
 from nltk.tokenize import word_tokenize
 from prompt_toolkit import PromptSession
-from prompt_toolkit.key_binding import KeyBindings
 from typer import Exit
 
 from chatcli import con
 
 # from icecream import ic
-
-bindings = KeyBindings()
 
 
 def load_log(log: str) -> list:
@@ -25,9 +22,7 @@ def load_log(log: str) -> list:
 
 
 def read_prompt(session: PromptSession):
-    prompt = session.prompt(
-        "> ", key_bindings=bindings, multiline=True, prompt_continuation="> "
-    )
+    prompt = session.prompt("> ", multiline=True, prompt_continuation="> ")
     if prompt == "exit" or prompt == "q":
         con.print("Exiting...")
         raise Exit(0)
