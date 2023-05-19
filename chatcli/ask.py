@@ -1,9 +1,10 @@
-import json
-import os
+from json import dump
+from os import getenv
 from typing import Optional
 
 import openai
 import typer
+from openai import ChatCompletion, Completion
 from openai.error import APIConnectionError, RateLimitError
 from prompt_toolkit import PromptSession
 from rich.markdown import Markdown
@@ -17,10 +18,16 @@ MAX_TOKENS = 2048
 MAX_TOKENS_V2 = 4096
 MAX_TEMP = 2
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = getenv("OPENAI_API_KEY")
+ENV = getenv("CHAT_ENV")
 
-prompt_loc = f"{appdata_location}/prompts.json"
-# prompt_loc = f"{appdata_location}/prompts_test.json"
+if ENV == "DEBUG":
+    from icecream import ic
+
+    prompt_loc = f"{appdata_location}/prompts_test.json"
+    ic(prompt_loc)
+else:
+    prompt_loc = f"{appdata_location}/prompts.json"
 
 
 def startup():
@@ -70,7 +77,7 @@ class Ask:
             # token_num = len(get_tokens(generate_prompt(prompt)))
             try:
                 with con.status("Generating"):
-                    response = openai.Completion.create(
+                    response = Completion.create(
                         model=model,
                         prompt=generate_prompt(prompt),
                         temperature=temp,
@@ -84,7 +91,7 @@ class Ask:
                     {"model": model, "prompt": prompt, "response": output}
                 )
                 with open(prompt_loc, mode="w", encoding="utf-8") as f:
-                    json.dump(self.prompt_log, f, indent=4, ensure_ascii=False)
+                    dump(self.prompt_log, f, indent=4, ensure_ascii=False)
 
             except APIConnectionError:
                 con.print(
@@ -123,7 +130,7 @@ class Ask:
             "Enter/Paste your prompt. Esc-Enter save it and exit or q to end the session"
         )
 
-        messages = []
+        prompts = []
         responses = []
         total_tokens = 0
 
@@ -140,34 +147,22 @@ class Ask:
                 )
                 raise typer.Exit(1)
 
-            messages.append({"role": "user", "content": prompt})
+            prompts.append({"role": "user", "content": prompt})
             try:
-                # if message_responses == []:
-                #     ic("Using *messaages, *responses")
-                #     sent = [*messages, *responses]
-                # else:
-                #     ic("Using message_responses")
-                #     sent = message_responses
-
-                # ic(sent[:3])
                 with con.status("Generating"):
-                    response = openai.ChatCompletion.create(
+                    response = ChatCompletion.create(
                         model=model,
                         messages=[
                             {"role": "system", "content": persona},
-                            *messages,
+                            *prompts,
                             *responses,
-                            # *sent,
                         ],
                     )
-
-                # ic(message_responses[:3])
 
                 output = response["choices"][0]["message"]["content"]
                 total_tokens = response["usage"]["total_tokens"]
 
                 responses.append({"role": "assistant", "content": output})
-                # con.print(f"""\n{output}\n""")
                 con_out = Padding(
                     Markdown(f"""{output}""", code_theme="ansi_dark"), (1, 0)
                 )
@@ -181,20 +176,14 @@ class Ask:
                     }
                 )
 
-                # message_responses = [
-                #     item for combo in zip(messages, responses) for item in combo
-                # ]
-                # ic(not message_responses == [])
-
                 with open(prompt_loc, mode="w", encoding="utf-8") as f:
-                    json.dump(self.prompt_log, f, indent=4, ensure_ascii=False)
+                    dump(self.prompt_log, f, indent=4, ensure_ascii=False)
 
             except RateLimitError:
                 con.print(
                     "Current model currently overloaded with requests, please try again later",
                     style="red bold",
                 )
-                # raise typer.Exit(1)
                 continue
 
             except APIConnectionError:

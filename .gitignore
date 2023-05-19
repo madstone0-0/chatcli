@@ -3,4 +3,5 @@ venv/*
 dist/*
 *.pyc
 .idea/*
+stats/*
 tags
