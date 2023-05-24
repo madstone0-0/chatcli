@@ -10,7 +10,7 @@ from prompt_toolkit import PromptSession
 from rich.markdown import Markdown
 from rich.padding import Padding
 
-from chatcli import ERROR, appdata_location, con
+from chatcli import ENV, ERROR, appdata_location, con
 from chatcli.history import PromptHistory
 from chatcli.utils import generate_prompt, get_tokens, load_log, read_prompt
 
@@ -19,7 +19,6 @@ MAX_TOKENS_V2 = 4096
 MAX_TEMP = 2
 
 openai.api_key = getenv("OPENAI_API_KEY")
-ENV = getenv("CHAT_ENV")
 
 if ENV == "DEBUG":
     from icecream import ic

@@ -5,9 +5,12 @@ from nltk.tokenize import word_tokenize
 from prompt_toolkit import PromptSession
 from typer import Exit
 
-from chatcli import con
+from chatcli import ENV, con
 
-# from icecream import ic
+if ENV == "DEBUG":
+    from icecream import ic
+
+    ic("Debug Mode")
 
 
 def load_log(log: str) -> list:
