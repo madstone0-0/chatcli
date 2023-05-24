@@ -5,7 +5,7 @@ from nltk.tokenize import word_tokenize
 from prompt_toolkit import PromptSession
 from typer import Exit
 
-from chatcli import ENV, con
+from chatcli import ENV, EXIT_COMMANDS, con
 
 if ENV == "DEBUG":
     from icecream import ic
@@ -26,7 +26,7 @@ def load_log(log: str) -> list:
 
 def read_prompt(session: PromptSession):
     prompt = session.prompt("> ", multiline=True, prompt_continuation="> ")
-    if prompt == "exit" or prompt == "q":
+    if prompt in EXIT_COMMANDS:
         con.print("Exiting...")
         raise Exit(0)
     if type(prompt) is list:
