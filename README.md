@@ -13,7 +13,7 @@ A CLI implementation of Open AI's Chat-GPT. Supports the following models:
 ## Requirements
 
 - Python 3.10+
-- Openai API key supplied as the env variable `OPEN_AI_KEY`
+- OpenAI API key supplied as the environment variable `OPENAI_API_KEY`
 
 ## Building
 
