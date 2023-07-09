@@ -15,6 +15,10 @@ help_msgs = {
     "tokens": "Max tokens used",
 }
 
+gpt4_models = {"default": "gpt-4", "32k": "gpt-4-32k"}
+
+gpt3_5_models = {"default": "gpt-3.5-turbo", "16k": "gpt-3.5-turbo-16k"}
+
 
 def _version_callback(value: bool) -> None:
     if value:
@@ -37,80 +41,40 @@ def main(
 
 
 @app.command()
+def ask_gpt4(
+    temp: float = typer.Argument(0.7, help=help_msgs["temp"]),
+    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
+    persona: str = typer.Argument("You are a helpful assistant", help="Assistant persona"),
+    is_file: Optional[bool] = typer.Option(None, "--file", help="Read persona from file path"),
+):
+    ask.ask(temp, tokens, model=gpt4_models["default"], persona=persona, is_file=is_file)
+
+
+@app.command()
+def ask_gpt4_32k(
+    temp: float = typer.Argument(0.7, help=help_msgs["temp"]),
+    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
+    persona: str = typer.Argument("You are a helpful assistant", help="Assistant persona"),
+    is_file: Optional[bool] = typer.Option(None, "--file", help="Read persona from file path"),
+):
+    ask.ask(temp, tokens, model=gpt4_models["32k"], persona=persona, is_file=is_file)
+
+
+@app.command()
 def ask_turbo(
     temp: float = typer.Argument(0.7, help=help_msgs["temp"]),
     tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
-    persona: str = typer.Argument(
-        "You are a helpful assistant", help="Assistant persona"
-    ),
-    is_file: Optional[bool] = typer.Option(
-        None, "--file", help="Read persona from file path"
-    ),
+    persona: str = typer.Argument("You are a helpful assistant", help="Assistant persona"),
+    is_file: Optional[bool] = typer.Option(None, "--file", help="Read persona from file path"),
 ):
-    ask.ask_v2(temp, tokens, model="gpt-3.5-turbo", persona=persona, is_file=is_file)
+    ask.ask(temp, tokens, model=gpt3_5_models["default"], persona=persona, is_file=is_file)
 
 
 @app.command()
-def ask_davinci_code(
-    temp: float = typer.Argument(
-        0.7,
-        help=help_msgs["temp"],
-    ),
+def ask_turbo_16k(
+    temp: float = typer.Argument(0.7, help=help_msgs["temp"]),
     tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
+    persona: str = typer.Argument("You are a helpful assistant", help="Assistant persona"),
+    is_file: Optional[bool] = typer.Option(None, "--file", help="Read persona from file path"),
 ):
-    ask.ask_v1(temp, tokens, model="code-davinci-002")
-
-
-@app.command()
-def ask_davinci_text(
-    temp: float = typer.Argument(
-        0.7,
-        help=help_msgs["temp"],
-    ),
-    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
-):
-    ask.ask_v1(temp, tokens, model="text-davinci-003")
-
-
-@app.command()
-def ask_davinci(
-    temp: float = typer.Argument(
-        0.7,
-        help=help_msgs["temp"],
-    ),
-    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
-):
-    ask.ask_v1(temp, tokens, model="davinci")
-
-
-@app.command()
-def ask_ada(
-    temp: float = typer.Argument(
-        0.7,
-        help=help_msgs["temp"],
-    ),
-    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
-):
-    ask.ask_v1(temp, tokens, model="text-ada-001")
-
-
-@app.command()
-def ask_curie(
-    temp: float = typer.Argument(
-        0.7,
-        help=help_msgs["temp"],
-    ),
-    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
-):
-    ask.ask_v1(temp, tokens, model="text-curie-001")
-
-
-@app.command()
-def ask_babbage(
-    temp: float = typer.Argument(
-        0.7,
-        help=help_msgs["temp"],
-    ),
-    tokens: int = typer.Argument(1000, help=help_msgs["tokens"]),
-):
-    ask.ask_v1(temp, tokens, model="text-babbage-001")
+    ask.ask(temp, tokens, model=gpt3_5_models["16k"], persona=persona, is_file=is_file)
