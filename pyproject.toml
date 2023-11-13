@@ -7,13 +7,13 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-openai = "^0.27.2"
-typer = "^0.7.0"
+openai = "^1.2.3"
+typer = "^0.9.0"
 rich = "^13.2.0"
 appdirs = "^1.4.4"
 nltk = "^3.8.1"
 prompt-toolkit = "^3.0.38"
-aiohttp = "3.9.0b0"
+aiohttp = "3.9.0b1"
 
 [tool.poetry.group.dev.dependencies]
 icecream = "^2.1.3"

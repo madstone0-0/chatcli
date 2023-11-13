@@ -4,7 +4,7 @@ from typing import Optional
 
 import openai
 import typer
-from openai import ChatCompletion
+from openai import ChatCompletion, OpenAI
 from openai.error import APIConnectionError, RateLimitError
 from prompt_toolkit import PromptSession
 from rich.markdown import Markdown
@@ -48,6 +48,7 @@ class Ask:
     def __init__(self):
         self.prompt_log = load_log(prompt_loc)
         self.session = PromptSession(history=PromptHistory(f"{appdata_location}/prompt_history"))
+        self.client = OpenAI(api_key=getenv("OPENAI_API_KEY"))
 
     def ask(
         self,
@@ -85,7 +86,7 @@ class Ask:
             prompt_len = len(get_tokens(prompt))
 
             if prompt_len + total_tokens > tokens:
-                print(
+                con.print(
                     "You have reached the maximum token length, Please reduce the length of" "the messages\nExiting...",
                     style=ERROR,
                 )
