@@ -1,24 +1,20 @@
 from json import dump
 from os import getenv
-from typing import Optional
+from typing import Any, Optional
 
 import openai
 import typer
-from openai import ChatCompletion, OpenAI
-from openai.error import APIConnectionError, RateLimitError
 from prompt_toolkit import PromptSession
 from rich.markdown import Markdown
 from rich.padding import Padding
 
 from chatcli import ENV, ERROR, appdata_location, con
 from chatcli.history import PromptHistory
+from chatcli.model import Model
 from chatcli.utils import get_tokens, load_log, read_prompt
 
-MAX_TOKENS = 2048
-MAX_TOKENS_V2 = 32768
 MAX_TEMP = 2
 
-openai.api_key = getenv("OPENAI_API_KEY")
 
 if ENV == "DEBUG":
     from icecream import ic
@@ -62,8 +58,8 @@ class Ask:
             con.print(f"Temperature cannot be below 0 or above {MAX_TEMP}", style=ERROR)
             raise typer.Exit(1)
 
-        if tokens <= 0 or tokens > MAX_TOKENS_V2:
-            con.print(f"Max tokens cannot be below 0 or above {MAX_TOKENS_V2}", style=ERROR)
+        if tokens <= 0 or tokens > model.maxTokens:
+            con.print(f"Max tokens cannot be below 0 or above {model.maxTokens}", style=ERROR)
             raise typer.Exit(1)
 
         if is_file:
@@ -72,17 +68,17 @@ class Ask:
 
         startup()
 
-        con.print(f"Temperature settings: {temp}\nMax Tokens: {tokens}\nModel: {model}")
+        con.print(f"Temperature settings: {temp}\nMax Tokens: {tokens}\nModel: {model.name}")
         con.print(f"Current persona settings: {persona}")
         con.print("Enter/Paste your prompt. Esc-Enter save it and exit or q to end the session")
 
         prompts = []
-        responses = []
+        responses: list[Any] = []
         total_tokens = 0
 
         while True:
             self.prompt_log = load_log(prompt_loc)
-            prompt = read_prompt(self.session)
+            prompt = read_prompt(self.session, model)
             prompt_len = len(get_tokens(prompt))
 
             if prompt_len + total_tokens > tokens:
@@ -95,8 +91,8 @@ class Ask:
             prompts.append({"role": "user", "content": prompt})
             try:
                 with con.status("Generating"):
-                    response = ChatCompletion.create(
-                        model=model,
+                    response = self.client.chat.completions.create(
+                        model=model.name,
                         messages=[
                             {"role": "system", "content": persona},
                             *prompts,
@@ -104,15 +100,15 @@ class Ask:
                         ],
                     )
 
-                output = response["choices"][0]["message"]["content"]
-                total_tokens = response["usage"]["total_tokens"]
+                output = response.choices[0].message.content
+                total_tokens = response.usage.total_tokens
 
                 responses.append({"role": "assistant", "content": output})
                 con_out = Padding(Markdown(f"""{output}""", code_theme="ansi_dark"), (1, 0))
                 con.print(con_out)
                 self.prompt_log.append(
                     {
-                        "model": model,
+                        "model": model.name,
                         "persona": persona,
                         "prompt": prompt,
                         "response": output,

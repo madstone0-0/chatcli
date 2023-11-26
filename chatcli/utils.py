@@ -6,6 +6,7 @@ from prompt_toolkit import PromptSession
 from typer import Exit
 
 from chatcli import ENV, EXIT_COMMANDS, con
+from chatcli.model import Model
 
 if ENV == "DEBUG":
     from icecream import ic
@@ -24,8 +25,8 @@ def load_log(log: str) -> list:
     return prompts
 
 
-def read_prompt(session: PromptSession):
-    prompt = session.prompt("> ", multiline=True, prompt_continuation="> ")
+def read_prompt(session: PromptSession, model: Model):
+    prompt = session.prompt(f"[{model.nickname}]> ", multiline=True, prompt_continuation=f"[{model.nickname}]> ")
     if prompt in EXIT_COMMANDS:
         con.print("Exiting...")
         raise Exit(0)
