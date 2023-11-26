@@ -2,8 +2,9 @@ from json import dump
 from os import getenv
 from typing import Any, Optional
 
-import openai
 import typer
+from openai import APIConnectionError, OpenAI, RateLimitError
+from openai.resources.chat.completions import NOT_GIVEN
 from prompt_toolkit import PromptSession
 from rich.markdown import Markdown
 from rich.padding import Padding
@@ -47,12 +48,7 @@ class Ask:
         self.client = OpenAI(api_key=getenv("OPENAI_API_KEY"))
 
     def ask(
-        self,
-        temp: float,
-        tokens: int,
-        model: str,
-        persona: str,
-        is_file: Optional[bool],
+        self, temp: float, tokens: int, model: Model, persona: str, is_file: Optional[bool], json_mode: Optional[bool]
     ):
         if temp < 0 or temp > MAX_TEMP:
             con.print(f"Temperature cannot be below 0 or above {MAX_TEMP}", style=ERROR)
@@ -67,6 +63,7 @@ class Ask:
                 persona = "".join(f.readlines())
 
         startup()
+        persona = persona if not json_mode else persona + ". You are designed to output JSON"
 
         con.print(f"Temperature settings: {temp}\nMax Tokens: {tokens}\nModel: {model.name}")
         con.print(f"Current persona settings: {persona}")
@@ -93,6 +90,7 @@ class Ask:
                 with con.status("Generating"):
                     response = self.client.chat.completions.create(
                         model=model.name,
+                        response_format={"type": "json_object"} if json_mode else NOT_GIVEN,
                         messages=[
                             {"role": "system", "content": persona},
                             *prompts,
