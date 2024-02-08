@@ -26,11 +26,15 @@ def load_log(log: str) -> list:
 
 
 def read_prompt(session: PromptSession, model: Model):
-    prompt = session.prompt(f"[{model.nickname}]> ", multiline=True, prompt_continuation=f"[{model.nickname}]> ")
+    prompt = session.prompt(
+        f"[{model.nickname}]> ",
+        multiline=True,
+        prompt_continuation=f"[{model.nickname}]> ",
+    )
     if prompt in EXIT_COMMANDS:
         con.print("Exiting...")
         raise Exit(0)
-    if type(prompt) is list:
+    if isinstance(prompt, list):
         prompt = "\n".join(prompt)
     return prompt
 

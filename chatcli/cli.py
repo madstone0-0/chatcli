@@ -51,7 +51,7 @@ def main(
         help="Show the application's version and exit",
         callback=_version_callback,
         is_eager=True,
-    )
+    ),
 ) -> None:
     return
 
@@ -64,7 +64,14 @@ def ask_gpt4_turbo(
     is_file: Optional[bool] = opts["is_file"],
     json_mode: Optional[bool] = opts["json_mode"],
 ):
-    ask.ask(temp, tokens, model=gpt4_models["turbo"], persona=persona, is_file=is_file, json_mode=json_mode)
+    ask.ask(
+        temp,
+        tokens,
+        model=gpt4_models["turbo"],
+        persona=persona,
+        is_file=is_file,
+        json_mode=json_mode,
+    )
 
 
 @app.command()
@@ -75,7 +82,14 @@ def ask_gpt4(
     is_file: Optional[bool] = opts["is_file"],
     json_mode: Optional[bool] = opts["json_mode"],
 ):
-    ask.ask(temp, tokens, model=gpt4_models["default"], persona=persona, is_file=is_file, json_mode=json_mode)
+    ask.ask(
+        temp,
+        tokens,
+        model=gpt4_models["default"],
+        persona=persona,
+        is_file=is_file,
+        json_mode=json_mode,
+    )
 
 
 @app.command()
@@ -86,7 +100,14 @@ def ask_gpt4_32k(
     is_file: Optional[bool] = opts["is_file"],
     json_mode: Optional[bool] = opts["json_mode"],
 ):
-    ask.ask(temp, tokens, model=gpt4_models["32k"], persona=persona, is_file=is_file, json_mode=json_mode)
+    ask.ask(
+        temp,
+        tokens,
+        model=gpt4_models["32k"],
+        persona=persona,
+        is_file=is_file,
+        json_mode=json_mode,
+    )
 
 
 @app.command()
@@ -97,7 +118,14 @@ def ask_turbo(
     is_file: Optional[bool] = opts["is_file"],
     json_mode: Optional[bool] = opts["json_mode"],
 ):
-    ask.ask(temp, tokens, model=gpt3_5_models["default"], persona=persona, is_file=is_file, json_mode=json_mode)
+    ask.ask(
+        temp,
+        tokens,
+        model=gpt3_5_models["default"],
+        persona=persona,
+        is_file=is_file,
+        json_mode=json_mode,
+    )
 
 
 @app.command()
@@ -108,4 +136,11 @@ def ask_turbo_16k(
     is_file: Optional[bool] = opts["is_file"],
     json_mode: Optional[bool] = opts["json_mode"],
 ):
-    ask.ask(temp, tokens, model=gpt3_5_models["16k"], persona=persona, is_file=is_file, json_mode=json_mode)
+    ask.ask(
+        temp,
+        tokens,
+        model=gpt3_5_models["16k"],
+        persona=persona,
+        is_file=is_file,
+        json_mode=json_mode,
+    )

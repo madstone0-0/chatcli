@@ -48,7 +48,13 @@ class Ask:
         self.client = OpenAI(api_key=getenv("OPENAI_API_KEY"))
 
     def ask(
-        self, temp: float, tokens: int, model: Model, persona: str, is_file: Optional[bool], json_mode: Optional[bool]
+        self,
+        temp: float,
+        tokens: int,
+        model: Model,
+        persona: str,
+        is_file: Optional[bool],
+        json_mode: Optional[bool],
     ):
         if temp < 0 or temp > MAX_TEMP:
             con.print(f"Temperature cannot be below 0 or above {MAX_TEMP}", style=ERROR)
