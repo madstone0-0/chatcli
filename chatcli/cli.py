@@ -1,9 +1,12 @@
+import json
 from importlib.metadata import version
-from typing import Optional
+from typing import Dict, List, Optional
 
 import typer
+from rich.markdown import Markdown
+from rich.padding import Padding
 
-from chatcli import con
+from chatcli import ENV, appdata_location, con
 from chatcli.ask import Ask
 from chatcli.model import Model
 
@@ -35,10 +38,19 @@ opts = {
     "json_mode": typer.Option(False, "--json", help="Enable JSON mode"),
 }
 
+MODELS = [v for d in [gpt4_models, gpt3_5_models] for k, v in d.items()]
+
 
 def _version_callback(value: bool) -> None:
     if value:
         con.print(f"v{version('chatcli')}")
+        raise typer.Exit()
+
+
+def _list_models_callback(value: bool) -> None:
+    if value:
+        for model in MODELS:
+            con.print(model)
         raise typer.Exit()
 
 
@@ -52,8 +64,37 @@ def main(
         callback=_version_callback,
         is_eager=True,
     ),
+    list_models: Optional[bool] = typer.Option(
+        None, "--list-models", help="Show currently available models", callback=_list_models_callback, is_eager=True
+    ),
 ) -> None:
     return
+
+
+@app.command()
+def history(model: Optional[str] = ""):
+    prompt_loc = f"{appdata_location}/prompts.json" if ENV != "DEBUG" else f"{appdata_location}/prompts_test.json"
+    prompts: List[Dict] = {}
+    try:
+        with open(f"{prompt_loc}", mode="r", encoding="utf-8") as f:
+            prompts = json.load(f)
+    except FileNotFoundError:
+        pass
+    itr = filter(lambda x: x["model"] == model, prompts) if model else prompts
+
+    if all(False for _ in itr):
+        con.print("No history")
+        return
+
+    with con.pager(styles=True):
+        for prompt in itr:
+            p = Markdown(f"""{prompt["prompt"]}""", code_theme="ansi_dark")
+            response = Padding(Markdown(prompt["response"], code_theme="ansi_dark"), (1, 1))
+            con.print(f"MODEL: {prompt["model"]}")
+            con.print("PROMPT: ")
+            con.print(p)
+            con.print("RESPONSE:")
+            con.print(response)
 
 
 @app.command()
