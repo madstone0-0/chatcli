@@ -23,6 +23,7 @@ gpt4_models = {
     "default": Model(name="gpt-4", nickname="gpt4", maxTokens=8192),
     "32k": Model(name="gpt-4-32k", nickname="gpt4-32k", maxTokens=32768),
     "turbo": Model(name="gpt-4-1106-preview", nickname="gpt4-turbo", maxTokens=128000),
+    "omni": Model(name="gpt-4o", nickname="gpt4-omni", maxTokens=128000),
 }
 
 gpt3_5_models = {
@@ -95,6 +96,24 @@ def history(model: Optional[str] = ""):
             con.print(p)
             con.print("RESPONSE:")
             con.print(response)
+
+
+@app.command()
+def ask_omni(
+    temp: float = opts["temp"],
+    tokens: int = opts["tokens"],
+    persona: str = opts["persona"],
+    is_file: Optional[bool] = opts["is_file"],
+    json_mode: Optional[bool] = opts["json_mode"],
+):
+    ask.ask(
+        temp,
+        tokens,
+        model=gpt4_models["omni"],
+        persona=persona,
+        is_file=is_file,
+        json_mode=json_mode,
+    )
 
 
 @app.command()

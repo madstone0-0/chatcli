@@ -122,11 +122,12 @@ class Ask:
                 with open(prompt_loc, mode="w", encoding="utf-8") as f:
                     dump(self.prompt_log, f, indent=4, ensure_ascii=False)
 
-            except RateLimitError:
+            except RateLimitError as re:
                 con.print(
                     "Current model currently overloaded with requests, please try again later",
                     style="red bold",
                 )
+                con.print(re)
                 continue
 
             except APIConnectionError:
